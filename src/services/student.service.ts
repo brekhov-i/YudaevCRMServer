@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Student } from '../schemas/student.schema';
 import { Model } from 'mongoose';
+import { IStudent } from '../types/student';
 
 @Injectable()
 export class StudentService {
@@ -27,5 +28,26 @@ export class StudentService {
     }
 
     return true;
+  }
+
+  async getAllStudent(): Promise<IStudent[]> {
+    return this.studentModel.find();
+  }
+
+  async getStudentByChatId(id: number) {
+    const students: Array<IStudent> = await this.studentModel.find({
+      chat: id,
+    });
+
+    return students;
+  }
+
+  async updateStudent(studentData: IStudent) {
+    const student: IStudent = await this.studentModel
+      .updateOne({ _id: studentData._id }, studentData)
+      .then(async () => {
+        return this.studentModel.findById(studentData._id);
+      });
+    return student;
   }
 }

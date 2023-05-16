@@ -52,9 +52,8 @@ export class UserController {
   }
 
   @Post('/create')
-  @UseGuards(AuthGuard('jwt'))
-  @UseGuards(new RoleAuthGuard(['admin']))
-  async createUser(@Res() res: Response) {
+  async createUser(@Res() res: Response, @Body() body: IUser) {
+    await this.userService.createUser(body);
     res.status(200).send('1');
   }
 }

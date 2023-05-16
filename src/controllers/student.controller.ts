@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
+  Put,
   Req,
   Res,
   UploadedFile,
@@ -21,6 +23,7 @@ import * as csvParser from 'csv-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import { StudentService } from '../services/student.service';
+import { IStudent } from '../types/student';
 
 @Controller('student')
 export class StudentController {
@@ -71,5 +74,31 @@ export class StudentController {
 
   @Get('/')
   @UseGuards(AuthGuard('jwt'))
-  async getStudent() {}
+  async getStudent(@Res() res: Response) {
+    const students: IStudent[] = await this.studentService.getAllStudent();
+
+    res.status(200).send(students);
+  }
+
+  @Get('/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getStudentByChatId(
+    @Res() res: Response,
+    @Param() param: { id: string },
+  ) {
+    const { id } = param;
+    const students: IStudent[] = await this.studentService.getStudentByChatId(
+      Number(id),
+    );
+
+    res.status(200).send(students);
+  }
+
+  @Put('/')
+  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(new RoleAuthGuard(['admin']))
+  async updateStudent(@Res() res: Response, @Body() body: IStudent) {
+    const newStudent = await this.studentService.updateStudent(body);
+    res.status(200).send(newStudent);
+  }
 }

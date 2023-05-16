@@ -63,7 +63,15 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    return this.userModel.findById(id);
+    const user: IUser = await this.userModel.findById(id);
+    const role = await this.roleModel.findById(user.role);
+    return {
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: role,
+      chat: user?.chatId,
+    };
   }
 
   async verificatePassword(password, passwordHash) {
