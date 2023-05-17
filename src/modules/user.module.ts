@@ -8,12 +8,14 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from '../configAuth/jwt.stretagy';
 import { ConfigModule } from '@nestjs/config';
+import { Chat, ChatSchema } from "../schemas/chat.scheme";
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Role.name, schema: RoleSchema }]),
+    MongooseModule.forFeature([{ name: Chat.name, schema: ChatSchema }]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,

@@ -5,6 +5,8 @@ import { Model } from 'mongoose';
 import { IStudent } from '../types/student';
 import { Chat } from "../schemas/chat.scheme";
 import { Lesson } from "../schemas/lesson.schema";
+import { IChat } from "../types/user";
+import * as mongoose from "mongoose";
 
 @Injectable()
 export class StudentService {
@@ -20,9 +22,10 @@ export class StudentService {
     for (const data of fileData) {
       const candidate = await this.studentModel.findOne({ email: data.email });
       if (!candidate) {
-        let chat = await this.chatModel.findOne( { name: data.chat.name } )
+        let chat = await this.chatModel.findOne( { title: data.chat.name } )
         if ( !chat ) {
           chat = new this.chatModel( { title: data.chat.name, link: data.chat.link } )
+          await chat.save()
         }
         const newStudent = new this.studentModel( {
           userId: data.gkId,
@@ -61,9 +64,10 @@ export class StudentService {
     return this.studentModel.find();
   }
 
-  async getStudentByChatId(id: number) {
+  async getStudentByChatId( id: string ) {
+    const chat: IChat = await this.chatModel.findById( new mongoose.Types.ObjectId( id ));
     const students: Array<IStudent> = await this.studentModel.find({
-      chat: id,
+      chat: chat._id,
     });
 
     return students;
@@ -91,5 +95,11 @@ export class StudentService {
     } else {
       throw new HttpException( "Студент не найден", HttpStatus.NOT_FOUND );
     }
+  }
+
+  async getChats() {
+    const chats: IChat[] = await this.chatModel.find();
+
+    return chats;
   }
 }

@@ -1,18 +1,20 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { UserDocument, User } from '../schemas/user.schema';
+import { User, UserDocument } from '../schemas/user.schema';
 import { Model } from 'mongoose';
 import { Role, RoleDocument } from '../schemas/role.schema';
-import { IUser } from '../types/user';
+import { IRole, IUser } from '../types/user';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { IJwt } from '../types/jwt';
+import { Chat, ChatDocument } from "../schemas/chat.scheme";
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Role.name) private roleModel: Model<RoleDocument>,
+    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -25,18 +27,20 @@ export class UserService {
       });
       const salt = bcrypt.genSaltSync(10);
       const passwordHash = bcrypt.hashSync(user.password, salt);
+      const chat = await this.chatModel.findOne({title: user.chat})
 
       const newUser = new this.userModel({
         name: user.name,
         email: user.email,
         password: passwordHash,
         role,
+        chat
       });
 
       await newUser
         .save()
         .then(() => {
-          throw new HttpException('Пользователь создан', HttpStatus.CREATED);
+          return "Пользователь создан"
         })
         .catch((e) => {
           throw new HttpException(e, HttpStatus.BAD_REQUEST);
@@ -50,7 +54,7 @@ export class UserService {
   }
 
   async findUser(email) {
-    const user = await this.userModel.findOne({ email });
+    const user: IUser = await this.userModel.findOne( { email } );
 
     if (user) {
       return user;
@@ -63,14 +67,17 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    const user: IUser = await this.userModel.findById(id);
-    return {
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      chat: user?.chatId,
-    };
+    const user: IUser = await this.userModel.findById( id );
+    if ( user ) {
+      const role: IRole = await this.roleModel.findById( user.role )
+      return {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        role: role,
+        chat: user?.chat,
+      };
+    }
   }
 
   async verificatePassword(password, passwordHash) {

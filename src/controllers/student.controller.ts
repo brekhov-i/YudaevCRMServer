@@ -9,31 +9,29 @@ import {
   Res,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { Response, Request } from 'express';
-import { AuthGuard } from '@nestjs/passport';
-import { RoleAuthGuard } from '../configAuth/roles.guard';
-import {
-  AnyFilesInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
-import * as csvParser from 'csv-parser';
-import * as fs from 'fs';
-import * as path from 'path';
-import { StudentService } from '../services/student.service';
-import { IStudent } from '../types/student';
-import * as exceljs from "exceljs"
+  UseInterceptors
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { AuthGuard } from "@nestjs/passport";
+import { RoleAuthGuard } from "../configAuth/roles.guard";
+import { FileInterceptor } from "@nestjs/platform-express";
+import * as csvParser from "csv-parser";
+import * as fs from "fs";
+import * as path from "path";
+import { StudentService } from "../services/student.service";
+import { IStudent } from "../types/student";
+import { IChat } from "../types/user";
 
-@Controller('student')
+@Controller( "student" )
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor( private readonly studentService: StudentService ) {
+  }
 
-  @Post('')
-  @UseGuards(AuthGuard('jwt'))
-  @UseGuards(new RoleAuthGuard(['admin']))
-  async createStudent() {}
+  @Post( "" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  @UseGuards( new RoleAuthGuard( [ "admin" ] ) )
+  async createStudent() {
+  }
 
   @Post('upload')
   @UseGuards(AuthGuard('jwt'))
@@ -58,17 +56,19 @@ export class StudentController {
     fs.createReadStream(filePath)
       .pipe(csvParser())
       .on('data', (data) => {
-        results.push({
-          gkId: data.id,
-          name: `${data.name} ${data.lastname}`,
-          phone: data.phone,
-          email: data.email,
-          telegram: data.nik_telegram,
-          chat: {
-            link: data.chat,
-            name: data.chatname
-          }
-        });
+        if ( Object.entries(data).length !== 0 ) {
+          results.push( {
+            gkId: data.id,
+            name: `${ data.name } ${ data.lastname }`,
+            phone: data.phone,
+            email: data.email,
+            telegram: data.nik_telegram,
+            chat: {
+              link: data.chat,
+              name: data.chatname
+            }
+          } );
+        }
       })
       .on('end', () => {
         this.studentService.createStudent(results);
@@ -86,15 +86,15 @@ export class StudentController {
     res.status(200).send(students);
   }
 
-  @Get('/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @Get( "/chat/:id" )
+  @UseGuards( AuthGuard( "jwt" ) )
   async getStudentByChatId(
     @Res() res: Response,
     @Param() param: { id: string },
   ) {
     const { id } = param;
     const students: IStudent[] = await this.studentService.getStudentByChatId(
-      Number(id),
+      id
     );
 
     res.status(200).send(students);
@@ -104,14 +104,23 @@ export class StudentController {
   @UseGuards(AuthGuard('jwt'))
   @UseGuards(new RoleAuthGuard(['admin']))
   async updateStudent(@Res() res: Response, @Body() body: IStudent) {
-    const newStudent = await this.studentService.updateStudent(body);
-    res.status(200).send(newStudent);
+    const newStudent = await this.studentService.updateStudent( body );
+    res.status( 200 ).send( newStudent );
   }
 
-  @Post('/addLesson')
-  async addLesson(@Res() res: Response, @Param() param: {idUser: string, lesson: string}) {
-    await this.studentService.addLesson(param);
+  @Post( "/addLesson" )
+  async addLesson( @Res() res: Response, @Param() param: { idUser: string, lesson: string } ) {
+    await this.studentService.addLesson( param );
 
-    res.status(200).send("Обновлено")
+    res.status( 200 ).send( "Обновлено" );
+  }
+
+  @Get( "/getChats" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  @UseGuards( new RoleAuthGuard( [ "admin" ] ) )
+  async getChats( @Res() res: Response ) {
+    const chats: IChat[] = await this.studentService.getChats();
+
+    res.status( 200 ).send( chats );
   }
 }

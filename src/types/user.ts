@@ -12,5 +12,10 @@ export interface IUser {
   email: string;
   password: string;
   role?: string;
-  chatId?: [number];
+  chat?: [IChat];
+}
+
+export interface IChat {
+  _id: string;
+  title: string;
 }
