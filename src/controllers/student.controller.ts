@@ -24,6 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { StudentService } from '../services/student.service';
 import { IStudent } from '../types/student';
+import * as exceljs from "exceljs"
 
 @Controller('student')
 export class StudentController {
@@ -58,10 +59,15 @@ export class StudentController {
       .pipe(csvParser())
       .on('data', (data) => {
         results.push({
-          name: `${data['Имя']} ${data['Фамилия']}`,
-          phone: data['Телефон'],
-          email: data.Email,
+          gkId: data.id,
+          name: `${data.name} ${data.lastname}`,
+          phone: data.phone,
+          email: data.email,
           telegram: data.nik_telegram,
+          chat: {
+            link: data.chat,
+            name: data.chatname
+          }
         });
       })
       .on('end', () => {
@@ -100,5 +106,12 @@ export class StudentController {
   async updateStudent(@Res() res: Response, @Body() body: IStudent) {
     const newStudent = await this.studentService.updateStudent(body);
     res.status(200).send(newStudent);
+  }
+
+  @Post('/addLesson')
+  async addLesson(@Res() res: Response, @Param() param: {idUser: string, lesson: string}) {
+    await this.studentService.addLesson(param);
+
+    res.status(200).send("Обновлено")
   }
 }

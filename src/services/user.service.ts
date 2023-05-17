@@ -64,12 +64,11 @@ export class UserService {
 
   async getUserById(id: string) {
     const user: IUser = await this.userModel.findById(id);
-    const role = await this.roleModel.findById(user.role);
     return {
       _id: user.id,
       name: user.name,
       email: user.email,
-      role: role,
+      role: user.role,
       chat: user?.chatId,
     };
   }
@@ -79,6 +78,7 @@ export class UserService {
   }
 
   async getToken(user: IUser) {
+    console.log(user)
     const payload: IJwt = { id: user.id, email: user.email, role: user.role };
 
     return {
