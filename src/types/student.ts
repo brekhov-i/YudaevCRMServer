@@ -1,4 +1,5 @@
 import { ObjectId } from "mongoose";
+import * as mongoose from "mongoose";
 
 export interface IStudent {
   _id: string;
@@ -7,5 +8,11 @@ export interface IStudent {
   email: string;
   telegram: string;
   chat: ObjectId;
-  lastLesson?: string;
+  lessons?: ILesson[];
+}
+
+
+export interface ILesson {
+  _id: mongoose.Types.ObjectId;
+  title: string;
 }

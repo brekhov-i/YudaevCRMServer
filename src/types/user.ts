@@ -1,21 +1,22 @@
-import { ObjectId } from 'mongoose';
+import * as mongoose from "mongoose";
+
 
 export interface IRole {
-  _id: ObjectId;
-  name: string;
-  title: string;
+  _id: mongoose.Types.ObjectId;
+  name?: string;
+  title?: string;
 }
 
 export interface IUser {
-  id?: string;
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
+  _id?: mongoose.Types.ObjectId;
+  name?: string;
+  email?: string;
+  password?: string;
+  role: IRole;
   chat?: [IChat];
 }
 
 export interface IChat {
-  _id: string;
-  title: string;
+  _id: mongoose.Types.ObjectId;
+  title?: string;
 }

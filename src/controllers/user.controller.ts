@@ -14,12 +14,12 @@ import { UserService } from '../services/user.service';
 import { IUser } from '../types/user';
 import { AuthGuard } from '@nestjs/passport';
 import { IJwt } from '../types/jwt';
-import { RoleAuthGuard } from '../configAuth/roles.guard';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  //Login
   @Post('/')
   async login(
     @Res() res: Response,
@@ -32,7 +32,7 @@ export class UserController {
       password,
       user.password,
     );
-
+    //
     if (!passIsValid)
       throw new HttpException('Пароль неверный', HttpStatus.UNAUTHORIZED);
 
@@ -45,8 +45,8 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'))
   async getUser(@Req() req: Request, @Res() res: Response) {
     const token: string = req.headers.authorization.split(' ')[1];
-    const { id }: IJwt = this.userService.getInfoToken(token);
-    const user = await this.userService.getUserById(id);
+    const { _id }: IJwt = this.userService.getInfoToken(token);
+    const user = await this.userService.getUserById(_id);
 
     res.status(200).send(user);
   }

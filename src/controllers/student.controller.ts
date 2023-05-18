@@ -21,6 +21,8 @@ import * as path from "path";
 import { StudentService } from "../services/student.service";
 import { IStudent } from "../types/student";
 import { IChat } from "../types/user";
+import * as ExcelJS from 'exceljs';
+import { Buffer } from "buffer";
 
 @Controller( "student" )
 export class StudentController {
@@ -122,5 +124,42 @@ export class StudentController {
     const chats: IChat[] = await this.studentService.getChats();
 
     res.status( 200 ).send( chats );
+  }
+
+  @Post('/getExcel')
+  async generateExcel(@Res() res, @Body() body: IStudent[]) {
+    // Создание нового Excel-документа
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet( 'Чат 1' );
+
+    worksheet.getCell( `A1` ).value = "Имя";
+    worksheet.getCell( `B1` ).value = "Email";
+    worksheet.getCell( `C1` ).value = "Telegram";
+    worksheet.getCell( `D1` ).value = "Телефон";
+    worksheet.getCell( `E1` ).value = "Последний пройденный урок";
+
+    worksheet.getRow( 1 ).font = { bold: true };
+
+    body.forEach( ( student, index ) => {
+      worksheet.getCell( `A${ index + 2 }` ).value = student.name;
+      worksheet.getCell( `B${ index + 2 }` ).value = student.email;
+      worksheet.getCell( `C${ index + 2 }` ).value = student.telegram;
+      worksheet.getCell( `D${ index + 2 }` ).value = student.phone;
+      worksheet.getCell( `E${ index + 2 }` ).value = student.lessons ? student.lessons[student.lessons?.length - 1].title : "";
+    } )
+
+    // Генерация файла Excel
+    const buffer: ExcelJS.Buffer = await workbook.xlsx.writeBuffer();
+
+    // Отправка файла на фронтенд
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="example.xlsx"',
+      'Content-Length': buffer.byteLength,
+    });
+
+    console.log(buffer)
+
+    res.send(buffer);
   }
 }

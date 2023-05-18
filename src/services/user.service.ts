@@ -1,22 +1,24 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from '../schemas/user.schema';
-import { Model } from 'mongoose';
-import { Role, RoleDocument } from '../schemas/role.schema';
-import { IRole, IUser } from '../types/user';
-import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
-import { IJwt } from '../types/jwt';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { User, UserDocument } from "../schemas/user.schema";
+import { Model } from "mongoose";
+import { Role, RoleDocument } from "../schemas/role.schema";
+import { IRole, IUser } from "../types/user";
+import * as bcrypt from "bcryptjs";
+import { JwtService } from "@nestjs/jwt";
+import { IJwt } from "../types/jwt";
 import { Chat, ChatDocument } from "../schemas/chat.scheme";
+import * as mongoose from "mongoose";
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Role.name) private roleModel: Model<RoleDocument>,
-    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
-    private readonly jwtService: JwtService,
-  ) {}
+    @InjectModel( User.name ) private userModel: Model<UserDocument>,
+    @InjectModel( Role.name ) private roleModel: Model<RoleDocument>,
+    @InjectModel( Chat.name ) private chatModel: Model<ChatDocument>,
+    private readonly jwtService: JwtService
+  ) {
+  }
 
   async createUser(user: IUser) {
     const candidate = await this.userModel.findOne({ email: user.email });
@@ -56,8 +58,19 @@ export class UserService {
   async findUser(email) {
     const user: IUser = await this.userModel.findOne( { email } );
 
+    console.log(user)
+
     if (user) {
-      return user;
+      const role = await this.roleModel.findById( user.role );
+
+      return {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: role,
+        chat: user?.chat
+      };
     } else {
       throw new HttpException(
         'Пользователь с таким email не найден',
@@ -66,18 +79,17 @@ export class UserService {
     }
   }
 
-  async getUserById(id: string) {
+  async getUserById(id: mongoose.Types.ObjectId) {
     const user: IUser = await this.userModel.findById( id );
-    if ( user ) {
-      const role: IRole = await this.roleModel.findById( user.role )
-      return {
-        _id: user.id,
-        name: user.name,
-        email: user.email,
-        role: role,
-        chat: user?.chat,
-      };
-    }
+    const role: IRole = await this.roleModel.findById(user.role);
+
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: role,
+      chat: user?.chat
+    };
   }
 
   async verificatePassword(password, passwordHash) {
@@ -85,8 +97,8 @@ export class UserService {
   }
 
   async getToken(user: IUser) {
-    console.log(user)
-    const payload: IJwt = { id: user.id, email: user.email, role: user.role };
+    console.log( user.role );
+    const payload: IJwt = { _id: user._id, email: user.email, role: user.role.title };
 
     return {
       access_token: this.jwtService.sign(payload),
