@@ -20,8 +20,8 @@ export class User {
   @Prop({type: Mongoose.Schema.Types.ObjectId, ref: "Role"})
   role: Role;
 
-  @Prop({type: Mongoose.Schema.Types.ObjectId, ref: "Chat"})
-  chat?: Chat;
+  @Prop([{type: Mongoose.Schema.Types.ObjectId, ref: "Chat"}])
+  chat?: Chat[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -29,14 +29,19 @@ export class UserService {
       });
       const salt = bcrypt.genSaltSync(10);
       const passwordHash = bcrypt.hashSync(user.password, salt);
-      const chat = await this.chatModel.findOne({title: user.chat})
+      const arrChats = [];
+      for ( const chatTitle of user.chat ) {
+        const chat = await this.chatModel.findOne({title: chatTitle})
+        arrChats.push(chat)
+      }
+
 
       const newUser = new this.userModel({
         name: user.name,
         email: user.email,
         password: passwordHash,
         role,
-        chat
+        chat: arrChats
       });
 
       await newUser
@@ -97,7 +102,6 @@ export class UserService {
   }
 
   async getToken(user: IUser) {
-    console.log( user.role );
     const payload: IJwt = { _id: user._id, email: user.email, role: user.role.title };
 
     return {
