@@ -13,7 +13,7 @@ export interface IUser {
   email?: string;
   password?: string;
   role: IRole;
-  chat?: [IChat];
+  chat?: IChat[];
 }
 
 export interface IChat {

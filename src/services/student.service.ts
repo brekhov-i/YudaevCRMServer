@@ -1,12 +1,12 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Student } from '../schemas/student.schema';
-import { Model } from 'mongoose';
-import { IStudent } from '../types/student';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Student } from "../schemas/student.schema";
+import * as mongoose from "mongoose";
+import { Model } from "mongoose";
+import { IStudent } from "../types/student";
 import { Chat } from "../schemas/chat.scheme";
 import { Lesson } from "../schemas/lesson.schema";
 import { IChat } from "../types/user";
-import * as mongoose from "mongoose";
 
 @Injectable()
 export class StudentService {
@@ -24,7 +24,7 @@ export class StudentService {
       if (!candidate) {
         let chat = await this.chatModel.findOne( { title: data.chat.name } )
         if ( !chat ) {
-          chat = new this.chatModel( { title: data.chat.name, link: data.chat.link } )
+          chat = new this.chatModel( { title: data.chat.name.trim(), link: data.chat.link.trim() } )
           await chat.save()
         }
         const newStudent = new this.studentModel( {
@@ -44,7 +44,7 @@ export class StudentService {
       } else {
         let chat = await this.chatModel.findOne( { name: data.chat.name } )
         if ( !chat ) {
-          chat = new this.chatModel( { title: data.chat.name, link: data.chat.link } )
+          chat = new this.chatModel( { title: data.chat.name.trim(), link: data.chat.link.trim() } )
         }
         await this.studentModel.updateOne( { _id: candidate._id }, {
           userId: data.gkId,
@@ -86,12 +86,16 @@ export class StudentService {
     const { userId, lessonTitle } = param;
     const student = await this.studentModel.findOne( { userId } );
     if ( student ) {
+      const studentLessons = student.lessons;
       let lesson = await this.lessonModel.findOne( { title: lessonTitle } )
-      if ( !lesson ) {
-        lesson = new this.lessonModel( { title: lesson } )
+      if ( !lesson && lessonTitle) {
+        lesson = new this.lessonModel( { title: lessonTitle } )
         await lesson.save();
       }
-      this.studentModel.updateOne( { userId }, { lesson: lesson } );
+      studentLessons.push(lesson)
+      console.log(studentLessons)
+      await this.studentModel.updateOne( { userId }, { lessons: studentLessons } );
+      return this.studentModel.findOne({userId});
     } else {
       throw new HttpException( "Студент не найден", HttpStatus.NOT_FOUND );
     }
@@ -101,5 +105,21 @@ export class StudentService {
     const chats: IChat[] = await this.chatModel.find();
 
     return chats;
+  }
+
+  async getChatsById(id) {
+    const chats: IChat = await this.chatModel.findById(id);
+
+    return chats;
+  }
+
+  async getStudentById(id) {
+    const student: IStudent = await this.studentModel.findOne( { userId: id } );
+
+    return student ? student : null;
+  }
+
+  async getLessons() {
+    return this.lessonModel.find();
   }
 }

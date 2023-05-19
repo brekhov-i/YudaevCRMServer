@@ -9,6 +9,7 @@ export interface IStudent {
   telegram: string;
   chat: ObjectId;
   lessons?: ILesson[];
+  lastLesson?: string;
 }
 
 

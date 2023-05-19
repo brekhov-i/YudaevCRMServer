@@ -19,10 +19,9 @@ import * as csvParser from "csv-parser";
 import * as fs from "fs";
 import * as path from "path";
 import { StudentService } from "../services/student.service";
-import { IStudent } from "../types/student";
+import { ILesson, IStudent } from "../types/student";
 import { IChat } from "../types/user";
-import * as ExcelJS from 'exceljs';
-import { Buffer } from "buffer";
+import * as ExcelJS from "exceljs";
 
 @Controller( "student" )
 export class StudentController {
@@ -77,22 +76,32 @@ export class StudentController {
         fs.unlinkSync(filePath);
       });
 
-    res.status(200).send('Все студенты загружены');
+    res.status( 200 ).send( "Все студенты загружены" );
   }
 
-  @Get('/')
-  @UseGuards(AuthGuard('jwt'))
-  async getStudent(@Res() res: Response) {
+  @Get( "/" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  async getStudent( @Res() res: Response ) {
     const students: IStudent[] = await this.studentService.getAllStudent();
 
-    res.status(200).send(students);
+    res.status( 200 ).send( students );
   }
+
+  @Get( "/:id" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  async getStudentById( @Res() res: Response, @Param() param ) {
+    const { id } = param;
+    const student: IStudent | null = await this.studentService.getStudentById( id );
+
+    res.status( 200 ).send( student );
+  }
+
 
   @Get( "/chat/:id" )
   @UseGuards( AuthGuard( "jwt" ) )
   async getStudentByChatId(
     @Res() res: Response,
-    @Param() param: { id: string },
+    @Param() param: { id: string }
   ) {
     const { id } = param;
     const students: IStudent[] = await this.studentService.getStudentByChatId(
@@ -102,19 +111,19 @@ export class StudentController {
     res.status(200).send(students);
   }
 
-  @Put('/')
-  @UseGuards(AuthGuard('jwt'))
-  @UseGuards(new RoleAuthGuard(['admin']))
-  async updateStudent(@Res() res: Response, @Body() body: IStudent) {
+  @Put( "/" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  @UseGuards( new RoleAuthGuard( [ "admin" ] ) )
+  async updateStudent( @Res() res: Response, @Body() body: IStudent ) {
     const newStudent = await this.studentService.updateStudent( body );
     res.status( 200 ).send( newStudent );
   }
 
-  @Post( "/addLesson" )
-  async addLesson( @Res() res: Response, @Param() param: { idUser: string, lesson: string } ) {
-    await this.studentService.addLesson( param );
+  @Post( "/addLesson/:userId/:lessonTitle" )
+  async addLesson( @Res() res: Response, @Param() param: { userId: string, lessonTitle: string } ) {
+    const student = await this.studentService.addLesson( param );
 
-    res.status( 200 ).send( "Обновлено" );
+    res.status( 200 ).send( student );
   }
 
   @Get( "/getChats" )
@@ -126,11 +135,29 @@ export class StudentController {
     res.status( 200 ).send( chats );
   }
 
-  @Post('/getExcel')
-  async generateExcel(@Res() res, @Body() body: IStudent[]) {
+  @Get( "/getChats/:id" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  @UseGuards( new RoleAuthGuard( [ "admin" ] ) )
+  async getChatsById( @Res() res: Response, @Param() param ) {
+    const { id } = param;
+    const chats: IChat = await this.studentService.getChatsById( id );
+
+    res.status( 200 ).send( chats );
+  }
+
+  @Get( "/lessons" )
+  @UseGuards( AuthGuard( "jwt" ) )
+  async getLessons( @Res() res: Response ) {
+    const lessons: ILesson[] = await this.studentService.getLessons();
+
+    res.status( 200 ).send( lessons );
+  }
+
+  @Post( "/getExcel" )
+  async generateExcel( @Res() res, @Body() body: IStudent[] ) {
     // Создание нового Excel-документа
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet( 'Чат 1' );
+    const worksheet = workbook.addWorksheet( "Чат 1" );
 
     worksheet.getCell( `A1` ).value = "Имя";
     worksheet.getCell( `B1` ).value = "Email";
@@ -145,8 +172,9 @@ export class StudentController {
       worksheet.getCell( `B${ index + 2 }` ).value = student.email;
       worksheet.getCell( `C${ index + 2 }` ).value = student.telegram;
       worksheet.getCell( `D${ index + 2 }` ).value = student.phone;
-      worksheet.getCell( `E${ index + 2 }` ).value = student.lessons ? student.lessons[student.lessons?.length - 1].title : "";
+      worksheet.getCell( `E${ index + 2 }` ).value = student.lastLesson;
     } )
+
 
     // Генерация файла Excel
     const buffer: ExcelJS.Buffer = await workbook.xlsx.writeBuffer();
