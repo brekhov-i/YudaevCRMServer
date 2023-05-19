@@ -67,8 +67,6 @@ export class UserService {
   async findUser(email) {
     const user: IUser = await this.userModel.findOne( { email } );
 
-    console.log(user)
-
     if (user) {
       const role = await this.roleModel.findById( user.role );
       const chats: IChat[] = [];
@@ -99,7 +97,7 @@ export class UserService {
 
   async getUserById(id: mongoose.Types.ObjectId) {
     const user: IUser = await this.userModel.findById( id );
-    const role: IRole = await this.roleModel.findOne({title: user.role});
+    const role: IRole = await this.roleModel.findById(user.role);
 
     return {
       _id: user._id,
